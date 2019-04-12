@@ -1,0 +1,15 @@
+{
+    "fields": {
+        "charges.amount.formattedAmount": {
+            "expect": "optional",
+            "pointer": 1
+        },
+        "friendlyTitle": {
+            "expect": "required",
+            "pointer": 0
+        }
+    },
+    "content": [
+        "your order for {0} is {1}"
+    ]
+}
