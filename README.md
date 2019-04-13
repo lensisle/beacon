@@ -10,7 +10,7 @@ I want to eat {apples} that cost {1000} dolars between {10 am} and {8pm} and tha
 
 **words between {} represents dynamic content.**
 
-[apples, 1000] are **required** fields, that means, we can assume they will always exist and shouldn't be considered as a trigger of the combinatory.
+[apples, 1000] are **required** fields, that means, we can assume they will always exist and shouldn't be considered in the combinatory.
  
 [10am, 8pm, happy] are **optional** fields, that means, they could or not be present, so their uncerintability will generate different files.
 
