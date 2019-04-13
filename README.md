@@ -144,7 +144,7 @@ output.addText(text);
 Sometimes definitions have to modify its content by a variation for the phrase to make sense.
 
 Example:
-From group 3: *least once before {8 pm}*
+From group 3: *least once before {8 pm}*  
 From group 4: *between {10 am} and {8pm}*
 
 Because initial date does not exist we change the phrase so it makes sense.
