@@ -34,7 +34,7 @@ if (typeof params !== 'undefined') {
 ```
 ReplaceDate(text, date);
 ```
-* assume *Replace* and *ReplaceDate* are method of the *TextFormat* object, like:
+* assume *Replace* and *ReplaceDate* are methods of the *TextFormat* object, like:
 ```
 TextFormat.Replace(text, ...words);
 TextFormat.ReplaceDate(text, date);
