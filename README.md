@@ -143,7 +143,7 @@ output.addText(text);
 ### Data aware definitions ###
 Sometimes definitions have to modify its content by a variation for the phrase to make sense.
 
-Example:
+Example:  
 From group 3: *least once before {8 pm}*  
 From group 4: *between {10 am} and {8pm}*
 
