@@ -31,7 +31,7 @@ if (typeof params !== 'undefined') {
     var data = params.foo;
 }
 ```
-* assume file-{n}-definitions.js and file-{n}-script.js will be merged so you can access any variables declared in one from the other.
+* assume variant.js and commonScript.js will be merged so you can access any variables declared in one from the other.
 * assume dates should be *REPLACED* with another function called *ReplaceDate* like: 
 ```
 ReplaceDate(text, date);
