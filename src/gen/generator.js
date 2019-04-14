@@ -48,7 +48,7 @@ function uppercaseFirst(text) {
     return text.charAt(0).toUpperCase() + text.slice(1)
 }
 
-function formateFieldName(field) {
+function formatFieldName(field) {
     if (field.includes(".")) {
         const parts = field.split(".");
         return uppercaseFirst(parts[parts.length - 1]);
@@ -62,11 +62,11 @@ function generateId(prefix, ignores) {
     }
     
     if (ignores.length === 2) {
-        return prefix + "Without" + formateFieldName(ignores[0]) + "And" + formateFieldName(ignores[1]);
+        return prefix + "Without" + formatFieldName(ignores[0]) + "And" + formatFieldName(ignores[1]);
     }
     const result = [prefix, "Without"];
     ignores.forEach(key => {
-        result.push(formateFieldName(key));
+        result.push(formatFieldName(key));
     });
 
     return result.join("");
@@ -91,17 +91,17 @@ function transform({ prefix, contents, fields }) {
                 });
             }
         });
-        result.push({ id: generateId(prefix, ignores), text, fields: fieldsResult });
+        result.push({ id: generateId(prefix, ignores), prefix, text, fields: fieldsResult });
     });
 
     return result;
 }
 
-async function createVariant(descriptor) {
-    const { id, text } = descriptor;
+async function createVariant(output, descriptor) {
+    const { id, prefix, text } = descriptor;
     const variant = replace(variable, "text", formatVariableContent(text));
     try {
-        await writeFile(`output/${id}`, `variant.js`, variant);
+        await writeFile(`${output}/${prefix}/${id}`, `variant.js`, variant);
     } catch (e) {
         console.error("Error found while creating a variant", e);
     }
@@ -132,8 +132,8 @@ function generateBody(fields) {
     return accumulator;
 }
 
-async function generateCommonScript(descriptor) {
-    const { id, fields } = descriptor;
+async function generateCommonScript(output, descriptor) {
+    const { id, prefix, text, fields } = descriptor;
     const inputSources = Array.from(new Set(fields.map(({ inputSource }) => inputSource)));
     const header = generateHeader(inputSources);
     const body = generateBody(fields);
@@ -141,13 +141,12 @@ async function generateCommonScript(descriptor) {
     const result = header + body;
 
     try {
-        await writeFile(`output/${id}`, `commonScript.js`, result);
+        await writeFile(`${output}/${prefix}/${id}`, `commonScript.js`, result);
     } catch (e) {
         console.error("Error found while creating a common script", e);
     }
     return descriptor;
 }
-
 
 module.exports = {  
     transform,

@@ -1,37 +1,37 @@
 const { transform, createVariant, generateCommonScript } = require("./gen/generator");
 const reader = require("./reader/jsonReader");
-const loader = require("./loader/fileLoader").readFileAsPromise;
+const loader = require("./loader/fileLoader");
 
-const filePath = process.argv[2];
+let { argv } = process;
+argv = argv.slice(2, argv.length);
 
-if (!filePath) {
-    console.error("Error! a filepath must be provided to run this script.");
-    return;
+function printHelp() {
+    console.log(`Usage: beacon [INPUT_FOLDER | OUTPUT_FOLDER]
+       beacon help`);
 }
 
-if (!filePath.endsWith(".json")) {
-    console.log("Error! a json file is required for now as entry input");
-}
-
-async function execute() {
+(async function execute() {
     try {
-        const file = await loader(filePath);
-        if (!file) {
-            console.error("Error! file loaded doesn't have data or could be readed");
-            return;
+        const [input, output] = argv;
+
+        if (input == "help" || argv.length != 2) {
+          printHelp();
+          return;
         }
 
-        const parsedFile = reader.tryJSONparse(file);
-        const descriptors = transform(parsedFile);
+        const files = await loader.readFolderAsPromise(input);
 
-        descriptors.forEach(async (descriptor) => {
-            await createVariant(descriptor);
-            await generateCommonScript(descriptor);
-        });
+        for (let file of files) {
+            const parsedFile = reader.tryJSONparse(file);
+            const descriptors = transform(parsedFile);
 
+            for (let descriptor of descriptors) {
+                await createVariant(output, descriptor);
+                await generateCommonScript(output, descriptor);
+            }
+        }
+        console.log("Done!");
     } catch (e) {
-        console.log(e);
+        console.error(e);
     }
-}
-
-execute().then((res) => console.log("done!"));
+})()
