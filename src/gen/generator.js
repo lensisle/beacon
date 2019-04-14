@@ -1,6 +1,10 @@
-const variable = require("../gen/templates/javascript/variable").variable;
-const objectExist = require("../gen/templates/javascript/objectExist").objectExist;
-const replace = require("./replacer").replace;
+const {
+    variable,
+    objectExist,
+    textReplace,
+    addText
+} = require("../gen/templates/javascript/all");
+const { replace, replaceAt } = require("./replacer");
 const writeFile = require("../writer/fileWriter").writeFileAsPromise;
 const EOL = require('os').EOL;
 /**
@@ -104,27 +108,44 @@ async function createVariant(descriptor) {
 }
 
 function generateHeader(inputSources) {
-    let result = ``;
-    inputSources.forEach(inputSource => {
-        result += objectExist(inputSource) + EOL;
-    });
-    return result;
+    return inputSources.reduce((accum, curr) => {
+        accum += objectExist(curr) + EOL;
+        return accum;
+    }, '') + EOL;
+}
+
+/**
+ * fields: [
+ *      {
+ *          key,
+ *          pointer,
+ *          inputSource
+ *      }
+ * ]
+ */
+function generateBody(fields) {
+    let accumulator = replaceAt(variable, "{0}", "result");
+    const accessors = fields.map(({ inputSource, key }) => inputSource + "." + key);
+    accumulator = replaceAt(accumulator, "{1}", textReplace("text", "MessageFormat", "format", ...accessors));
+    accumulator += EOL;
+    accumulator += addText("result");
+    return accumulator;
 }
 
 async function generateCommonScript(descriptor) {
-    const { id, text, fields } = descriptor;
-    const inputSources = new Set(fields.map(({ inputSource }) => inputSource));
+    const { id, fields } = descriptor;
+    const inputSources = Array.from(new Set(fields.map(({ inputSource }) => inputSource)));
     const header = generateHeader(inputSources);
+    const body = generateBody(fields);
+
+    const result = header + body;
+
     try {
-        await writeFile(`output/${id}`, `commonScript.js`, header);
+        await writeFile(`output/${id}`, `commonScript.js`, result);
     } catch (e) {
         console.error("Error found while creating a common script", e);
     }
     return descriptor;
-}
-
-function generatePrompt() {
-
 }
 
 

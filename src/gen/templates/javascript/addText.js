@@ -1,6 +1,4 @@
-const addText = text => `
-   output.addText(${text});
-`;
+const addText = text => `output.addText(${text});`;
 
 module.exports = {
     addText

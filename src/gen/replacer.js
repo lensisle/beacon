@@ -9,8 +9,8 @@ function replace(text, ...replacements) {
     return result;
 }
 
-function replaceAt(text, target) {
-    return result.replace(target, text);
+function replaceAt(source, target, replacement) {
+    return source.replace(target, replacement);
 }
 
 module.exports = {
