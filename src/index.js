@@ -1,4 +1,4 @@
-const translate = require("./gen/generator").translate;
+const { transform, createVariant } = require("./gen/generator");
 const reader = require("./reader/jsonReader");
 const loader = require("./loader/fileLoader").readFileAsPromise;
 
@@ -23,7 +23,8 @@ async function execute() {
 
         const value = reader.tryJSONparse(file)
 
-        translate(value);
+        const data = transform(value);
+        createVariant(data);
     } catch (e) {
         console.log(e);
     }

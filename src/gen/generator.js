@@ -1,31 +1,101 @@
-const filterField = (expectation, arr) => key => arr[key].expect === expectation;
-const mapField = arr => key => ({ expect: arr[key].expect, pointer: arr[key].pointer, key });
+const variable = require("../gen/templates/javascript/variable").variable;
+const replace = require("./replacer").replace;
+const writeFile = require("../writer/fileWriter").writeFileAsPromise;
+/**
+ * input:
+ * "prefix": "OrderUseCase",
+ * "fields": {
+        "charges.amount.formattedAmount": {
+            "pointer": 1
+        },
+        "friendlyTitle": {
+            "pointer": 0
+        }
+    },
+    "contents": [
+        {
+            "text": "your order for {0} is {1}",
+            "ignores": []
+        },
+        {
+            "text": "your order for {0}",
+            "ignores": ["charges.amount.formattedAmount"]
+        }
+    ]
 
-function translate(payload) {
-    const { content, fields } = payload;
+    return:
+    [
+        {
+            id: "OrderUseCase",
+            text: "your order for {0} is {1}",
+            fields: [{ key: friendlyTitle, pointer: 0 }, { key: charges.amount.formattedAmount, pointer: 1 }]
+        },
+        {
+            id: "OrderUseCaseWithoutFriendlyTitle",
+            text: "your order for {0}",
+            fields: [{ key: friendlyTitle, pointer: 0 }]
+        }
+    ]
+ */
 
-    const filterRequired = filterField("required", fields);
-    const filterOptional = filterField("optional", fields);
-
-    const createField = mapField(fields);
-
-    const required = Object.keys(fields)
-        .filter(filterRequired)
-        .map(createField);
-
-    const optional = Object.keys(fields)
-        .filter(filterOptional)
-        .map(createField);
-
-    return {
-        required,
-        optional,
-        content
-    };
+function uppercaseFirst(text) {
+    return text.charAt(0).toUpperCase() + text.slice(1)
 }
 
-function generateVariant(content) {
+function formateFieldName(field) {
+    if (field.includes(".")) {
+        const parts = field.split(".");
+        return uppercaseFirst(parts[parts.length - 1]);
+    }
+    return uppercaseFirst(field);
+}
 
+function generateId(prefix, ignores) {
+    if (!ignores.length) {
+        return prefix;
+    }
+    
+    if (ignores.length === 2) {
+        return prefix + "Without" + formateFieldName(ignores[0]) + "And" + formateFieldName(ignores[1]);
+    }
+    const result = [prefix, "Without"];
+    ignores.forEach(key => {
+        result.push(formateFieldName(key));
+    });
+
+    return result.join("");
+}
+
+function formatVariableContent(content) {
+    return `"${content}"`;
+}
+
+function transform({ prefix, contents, fields }) {
+    let result = [];
+    const fieldKeys = Object.keys(fields);
+
+    contents.forEach(({ text, ignores }) => {
+        const fieldsResult = [];
+        fieldKeys.forEach(key => {
+            if (!ignores.includes(key)) {
+                fieldsResult.push({
+                    key,
+                    pointer: fields[key].pointer
+                });
+            }
+        });
+        result.push({ id: generateId(prefix, ignores), text, fields: fieldsResult });
+    });
+
+    return result;
+}
+
+function createVariant(data) {
+    data.forEach(entry => {
+        const { id, text } = entry;
+        const variant = replace(variable, "text", formatVariableContent(text));
+        writeFile("output", `${id}.js`, variant);
+    });
 }
 
 function generateCommonScript() {
@@ -38,5 +108,6 @@ function generatePrompt() {
 
 
 module.exports = {  
-    translate
+    transform,
+    createVariant
 };

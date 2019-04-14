@@ -1,1 +1,4 @@
-export default `var {0} = {1};`;
+const variable = `var {0} = {1};`;
+module.exports = { 
+    variable
+};
