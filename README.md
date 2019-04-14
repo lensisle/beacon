@@ -20,7 +20,7 @@ I want to eat {apples} that cost {1000} dolars between {10 am} and {8pm} and tha
 ```
 Replace(text, ...words)
 ```
-* assume the *script file* will consume a *params* object that holds the data.
+* assume the *script file* will consume a *params* and/or *directive* object that holds the data.
 * assume the result must be set in a global *output* object using its *addText* method like:
 ```
 output.addText(result)
