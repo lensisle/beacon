@@ -2,10 +2,11 @@ const fs = require('fs');
 const path = require('path');
 
 function ensureDirectoryExistence(filePath) {
-    fs.mkdirSync(filePath, { recursive: true });
+    fs.mkdirSync(filePath, { recursive: true }); // Works on node 11
 }
 
 function writeFileAsPromise(targetPath, filename, text) {
+    targetPath = path.resolve(targetPath);
     ensureDirectoryExistence(targetPath);
     const writePath = path.join(targetPath, filename);
 
@@ -14,9 +15,8 @@ function writeFileAsPromise(targetPath, filename, text) {
             if(err) {
                 rej(err);
             }
-
             res();
-        }); 
+        });
     });
 }
 
