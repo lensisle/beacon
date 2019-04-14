@@ -143,7 +143,12 @@ var text = "I want to eat {0} that cost {1} dolars.";
 ```
 commonScript.js ->
 ```
-output.addText(text);
+if (typeof params !== 'undefined') {
+    return;
+}
+
+var result = TextFormat.Replace(text, params.food, params.cost);
+output.addText(result);
 ```
 
 ## Notable problems
