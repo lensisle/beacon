@@ -1,6 +1,8 @@
 const variable = require("../gen/templates/javascript/variable").variable;
+const objectExist = require("../gen/templates/javascript/objectExist").objectExist;
 const replace = require("./replacer").replace;
 const writeFile = require("../writer/fileWriter").writeFileAsPromise;
+const EOL = require('os').EOL;
 /**
  * input:
  * "prefix": "OrderUseCase",
@@ -80,7 +82,8 @@ function transform({ prefix, contents, fields }) {
             if (!ignores.includes(key)) {
                 fieldsResult.push({
                     key,
-                    pointer: fields[key].pointer
+                    pointer: fields[key].pointer,
+                    inputSource: fields[key].inputSource
                 });
             }
         });
@@ -90,16 +93,34 @@ function transform({ prefix, contents, fields }) {
     return result;
 }
 
-function createVariant(data) {
-    data.forEach(entry => {
-        const { id, text } = entry;
-        const variant = replace(variable, "text", formatVariableContent(text));
-        writeFile("output", `${id}.js`, variant);
-    });
+async function createVariant(descriptor) {
+    const { id, text } = descriptor;
+    const variant = replace(variable, "text", formatVariableContent(text));
+    try {
+        await writeFile(`output/${id}`, `variant.js`, variant);
+    } catch (e) {
+        console.error("Error found while creating a variant", e);
+    }
 }
 
-function generateCommonScript() {
+function generateHeader(inputSources) {
+    let result = ``;
+    inputSources.forEach(inputSource => {
+        result += objectExist(inputSource) + EOL;
+    });
+    return result;
+}
 
+async function generateCommonScript(descriptor) {
+    const { id, text, fields } = descriptor;
+    const inputSources = new Set(fields.map(({ inputSource }) => inputSource));
+    const header = generateHeader(inputSources);
+    try {
+        await writeFile(`output/${id}`, `commonScript.js`, header);
+    } catch (e) {
+        console.error("Error found while creating a common script", e);
+    }
+    return descriptor;
 }
 
 function generatePrompt() {
@@ -109,5 +130,6 @@ function generatePrompt() {
 
 module.exports = {  
     transform,
-    createVariant
+    createVariant,
+    generateCommonScript
 };

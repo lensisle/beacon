@@ -1,4 +1,4 @@
-const { transform, createVariant } = require("./gen/generator");
+const { transform, createVariant, generateCommonScript } = require("./gen/generator");
 const reader = require("./reader/jsonReader");
 const loader = require("./loader/fileLoader").readFileAsPromise;
 
@@ -21,13 +21,17 @@ async function execute() {
             return;
         }
 
-        const value = reader.tryJSONparse(file)
+        const parsedFile = reader.tryJSONparse(file);
+        const descriptors = transform(parsedFile);
 
-        const data = transform(value);
-        createVariant(data);
+        descriptors.forEach(async (descriptor) => {
+            await createVariant(descriptor);
+            await generateCommonScript(descriptor);
+        });
+
     } catch (e) {
         console.log(e);
     }
 }
 
-execute().then((res) => console.log("bye!"));
+execute().then((res) => console.log("done!"));
