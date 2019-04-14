@@ -14,6 +14,8 @@ I want to eat {apples} that cost {1000} dolars between {10 am} and {8pm} and tha
  
 [10am, 8pm, happy] are **optional** fields, that means, they could or not be present, so their uncerintability will generate different files.
 
+### Assumptions
+
 * assume we have a *Replace* function available like: 
 ```
 Replace(text, ...words)
