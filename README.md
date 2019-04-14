@@ -3,7 +3,7 @@
 The problem:  
 We want to auto-generate .js groups of files [1] that covers all the possible combinations given a phrase.
 
-**[1]** a group is a prompt folder with script and definitions file inside.
+**[1]** a group is a prompt folder with a commonScript, variant and variant-inputs inside.
 
 For example:
 I want to eat {apples} that cost {1000} dolars between {10 am} and {8pm} and that would make me {happy}.
