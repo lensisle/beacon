@@ -4,7 +4,7 @@ function replace(text, ...replacements) {
     }
     let result = text;
     replacements.forEach(replacement => {
-        result = result.replace(/\{[0-9]}/, replacement);
+        result = result.replace(/\{[0-9].}/, replacement);
     });
     return result;
 }
