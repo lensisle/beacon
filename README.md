@@ -52,11 +52,11 @@ Expected result:
 
 **Group 1**
 
-{file-1-definitions}.js ->
+variant.js ->
 ```
 var text = "I want to eat {0} that cost {1} dolars between {2} and {3} and that would make me {4}.";
 ```
-{file-1-script}.js ->
+commonScript.js ->
 ```
 if (typeof params !== 'undefined') {
     return;
@@ -69,11 +69,11 @@ output.addText(result);
 
 **Group 2**
 
-{file-2-definitions}.js ->
+variant.js ->
 ```
 var text = "I want to eat {0} that cost {1} dolars at {2} and that would make me {3}.";
 ```
-{file-2-script}.js ->
+commonScript.js ->
 ```
 if (typeof params !== 'undefined') {
     return;
@@ -86,11 +86,11 @@ output.addText(result);
 
 **Group 3**
 
-{file-3-definitions}.js ->
+variant.js ->
 ```
 var text = "I want to eat {0} that cost {1} dolars at least once before {2} and that would make me {3}.";
 ```
-{file-3-script}.js ->
+commonScript.js ->
 ```
 if (typeof params !== 'undefined') {
     return;
@@ -103,11 +103,11 @@ output.addText(result);
 
 **Group 4**
 
-{file-4-definitions}.js ->
+variant.js ->
 ```
 var text = "I want to eat {0} that cost {1} dolars between {2} and {3}.";
 ```
-{file-4-script}.js ->
+commonScript.js ->
 ```
 if (typeof params !== 'undefined') {
     return;
@@ -120,11 +120,11 @@ output.addText(result);
 
 **Group 5**
 
-{file-5-definitions}.js ->
+variant.js ->
 ```
 var text = "I want to eat {0} that cost {1} dolars and that would make me {2}.";
 ```
-{file-5-script}.js ->
+commonScript.js ->
 ```
 if (typeof params !== 'undefined') {
     return;
@@ -137,11 +137,11 @@ output.addText(result);
 
 **Group 6**
 
-{file-5-definitions}.js ->
+variant.js ->
 ```
 var text = "I want to eat {0} that cost {1} dolars.";
 ```
-{file-5-script}.js ->
+commonScript.js ->
 ```
 output.addText(text);
 ```
