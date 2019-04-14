@@ -84,11 +84,7 @@ function transform({ prefix, contents, fields }) {
         const fieldsResult = [];
         fieldKeys.forEach(key => {
             if (!ignores.includes(key)) {
-                fieldsResult.push({
-                    key,
-                    pointer: fields[key].pointer,
-                    inputSource: fields[key].inputSource
-                });
+                fieldsResult.push({ ...fields[key], key });
             }
         });
         result.push({ id: generateId(prefix, ignores), text, fields: fieldsResult });
@@ -119,7 +115,9 @@ function generateHeader(inputSources) {
  *      {
  *          key,
  *          pointer,
- *          inputSource
+ *          inputSource,
+ *          isDate,
+ *          testValue
  *      }
  * ]
  */
@@ -145,12 +143,37 @@ async function generateCommonScript(descriptor) {
     } catch (e) {
         console.error("Error found while creating a common script", e);
     }
-    return descriptor;
 }
 
+function variantParamsReducer(accum, curr) {
+    const { key, testValue, inputSource } = curr;
+    if (!accum[inputSource]) {
+        accum[inputSource] = {};
+    }
+    const levels = key.split(".");
+    let last = accum[inputSource];
+    levels.forEach((level, i) => {
+        if (!last[level]) {
+            last[level] = i === levels.length - 1 ? testValue : {};
+        }
+        last = last[level];
+    });
+    return accum;
+}
+
+async function generateVariantParams(descriptor) {
+    const { id, fields } = descriptor;
+    const variantParams = fields.reduce(variantParamsReducer, {});
+    try {
+        await writeFile(`output/${id}`, `variant.params.json`, JSON.stringify(variantParams, null, 2));
+    } catch (e) {
+        console.error("Error found while creating a variant params", e);
+    }
+}
 
 module.exports = {  
     transform,
     createVariant,
-    generateCommonScript
+    generateCommonScript,
+    generateVariantParams
 };

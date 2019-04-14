@@ -1,0 +1,16 @@
+{
+  "params": {
+    "product": {
+      "name": "Avocado"
+    },
+    "charges": {
+      "amount": {
+        "formattedAmount": "$50"
+      }
+    },
+    "dates": {
+      "initialDate": "????0515",
+      "endDate": "????0516"
+    }
+  }
+}

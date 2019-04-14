@@ -4,27 +4,32 @@
         "product.name": {
             "pointer": 0,
             "inputSource": "params",
-            "isDate": false
+            "isDate": false,
+            "testValue": "Avocado"
         },
         "charges.amount.formattedAmount": {
             "pointer": 1,
             "inputSource": "params",
-            "isDate": false
+            "isDate": false,
+            "testValue": "$50"
         },
         "dates.initialDate": {
             "pointer": 2,
             "inputSource": "params",
-            "isDate": true
+            "isDate": true,
+            "testValue": "????0515"
         },
         "dates.endDate": {
             "pointer": 3,
             "inputSource": "params",
-            "isDate": true
+            "isDate": true,
+            "testValue": "????0516"
         },
         "target.emotions.emotion": {
             "pointer": 4,
-            "inputSource": "variants",
-            "isDate": false
+            "inputSource": "directive",
+            "isDate": false,
+            "testValue": "happy"
         }
     },
     "contents": [
