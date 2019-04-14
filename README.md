@@ -52,7 +52,7 @@ Expected result:
 
 {file-1-definitions}.js ->
 ```
-var text = "I want to eat {0} that cost {1} dolars between {10 am} and {8pm} and that would make me {happy}.";
+var text = "I want to eat {0} that cost {1} dolars between {2} and {3} and that would make me {4}.";
 ```
 {file-1-script}.js ->
 ```
@@ -69,7 +69,7 @@ output.addText(result);
 
 {file-2-definitions}.js ->
 ```
-var text = "I want to eat {0} that cost {1} dolars at {10 am} and that would make me {happy}.";
+var text = "I want to eat {0} that cost {1} dolars at {2} and that would make me {3}.";
 ```
 {file-2-script}.js ->
 ```
@@ -86,7 +86,7 @@ output.addText(result);
 
 {file-3-definitions}.js ->
 ```
-var text = "I want to eat {0} that cost {1} dolars at least once before {8 pm} and that would make me {happy}.";
+var text = "I want to eat {0} that cost {1} dolars at least once before {2} and that would make me {3}.";
 ```
 {file-3-script}.js ->
 ```
@@ -103,7 +103,7 @@ output.addText(result);
 
 {file-4-definitions}.js ->
 ```
-var text = "I want to eat {0} that cost {1} dolars between {10 am} and {8pm}.";
+var text = "I want to eat {0} that cost {1} dolars between {2} and {3}.";
 ```
 {file-4-script}.js ->
 ```
@@ -120,7 +120,7 @@ output.addText(result);
 
 {file-5-definitions}.js ->
 ```
-var text = "I want to eat {0} that cost {1} dolars and that would make me {happy}.";
+var text = "I want to eat {0} that cost {1} dolars and that would make me {2}.";
 ```
 {file-5-script}.js ->
 ```
