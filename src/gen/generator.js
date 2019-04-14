@@ -29,7 +29,7 @@ const EOL = require('os').EOL;
         }
     ]
 
-    return:
+    returns:
     [
         {
             id: "OrderUseCase",
