@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "node src/index.js src/data/schema.json"
+    "start": "node src/index.js src/data output/",
+    "clean": "rm -rf output"
   },
   "author": "",
   "license": "ISC"
