@@ -41,7 +41,7 @@ ReplaceDate(text, date);
 TextFormat.Replace(text, ...words);
 TextFormat.ReplaceDate(text, date);
 ```
-* assume *params* fields can be objects, like:
+* assume *params* fields can have inner objects, like:
 ```
 var apple = params.tree.leafs.apple;
 var result = TextFormat.Replace(text, ..., apple, ...);
