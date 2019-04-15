@@ -97,7 +97,7 @@ async function createVariant(descriptor) {
     const { id, text } = descriptor;
     const variant = replace(variable, "text", formatVariableContent(text));
     try {
-        await writeFile(`output/${id}`, `variant.js`, variant);
+        await writeFile(`output/en-US/${id}`, `variant.js`, variant);
     } catch (e) {
         console.error("Error found while creating a variant", e);
     }
@@ -165,7 +165,7 @@ async function generateVariantParams(descriptor) {
     const { id, fields } = descriptor;
     const variantParams = fields.reduce(variantParamsReducer, {});
     try {
-        await writeFile(`output/${id}`, `variant.params.json`, JSON.stringify(variantParams, null, 2));
+        await writeFile(`output/en-US/${id}`, `variant.params.json`, JSON.stringify(variantParams, null, 2));
     } catch (e) {
         console.error("Error found while creating a variant params", e);
     }

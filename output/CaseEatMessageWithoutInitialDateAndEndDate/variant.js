@@ -1,1 +1,0 @@
-var text = "I want to eat {0} that cost {1} dolars and that would make me {4}.";
