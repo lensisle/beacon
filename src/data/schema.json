@@ -11,7 +11,7 @@
             "pointer": 1,
             "inputSource": "params",
             "isDate": false,
-            "testValue": "$50"
+            "testValue": "$50",
         },
         "dates.initialDate": {
             "pointer": 2,

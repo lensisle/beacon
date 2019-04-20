@@ -1,15 +1,15 @@
 // cases: [{ val, result }, ...]
-const switchAssign = (defaultValue, switchTarget, cases) => `
-    var after = ${defaultValue};
+const switchAssign = (afterName, defaultValue, switchTarget, cases) => `
+    var ${afterName} = ${defaultValue};
     switch (${switchTarget}) {
         ${cases.map(({ val, result }) => {
             return `case ${val}: 
-                        after = ${result};
+                        ${afterName} = ${result};
                         break
                     `;
         })}
         default:
-            after = ${defaultValue};
+            ${afterName} = ${defaultValue};
             break;
     }
 `;

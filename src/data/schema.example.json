@@ -1,0 +1,105 @@
+{
+  "prefix": "CaseEatMessage",
+  "fields": {
+      "product.name": {
+          "pointer": 0,
+          "inputSource": "params",
+          "isDate": false,
+          "testValue": "Avocado"
+      },
+      "charges.amount.formattedAmount": {
+          "pointer": 1,
+          "inputSource": "params",
+          "isDate": false,
+          "testValue": "$50"
+      },
+      "dates.initialDate": {
+          "pointer": 2,
+          "inputSource": "params",
+          "isDate": true,
+          "testValue": "????0515"
+      },
+      "dates.endDate": {
+          "pointer": 3,
+          "inputSource": "params",
+          "isDate": true,
+          "testValue": "????0516"
+      },
+      "target.emotions.emotion": {
+          "pointer": 4,
+          "inputSource": "directive",
+          "isDate": false,
+          "testValue": "happy"
+      }
+  },
+  "contents": [
+      {
+          "text": "I want to eat {0} that cost {1} dolars between {2} and {3} and that would make me {4}.",
+          "ignores": []
+      },
+      {
+          "text": "I want to eat {0} that cost {1} dolars between {2} and {3}.",
+          "ignores": ["target.emotions.emotion"]
+      },
+      {
+          "text": "I want to eat {0} that cost {1} dolars at {2} and that would make me {4}.",
+          "ignores": ["dates.endDate"]
+      },
+      {
+          "text": "I want to eat {0} that cost {1} dolars.",
+          "ignores": ["dates.initialDate", "dates.endDate", "target.emotions.emotion"]
+      },
+      {
+          "text": "I want to eat {0} that cost {1} dolars at least once before {3} and that would make me {4}.",
+          "ignores": ["dates.initialDate"]
+      },
+      {
+          "text": "I want to eat {0} that cost {1} dolars and that would make me {4}.",
+          "ignores": ["dates.initialDate", "dates.endDate"]
+      }
+  ],
+  "define": {
+      "startDate": {
+          "bind": "dates.initialDate",
+          "apply": "switchAssign",
+          "params": {
+              "target": "type",
+              "cases": [
+                  {"key": "TODAY", "value": "today"}, 
+                  {"key": "TOMORROW", "value": "tomorrow"},
+                  {"key": "DISTANT", "value": "SsmlDate"}
+              ],
+              "default": "default value"
+          }
+      },
+      "finalDate": {
+          "bind": "dates.endDate",
+          "apply": "switchAssign",
+          "params": {
+              "target": "type",
+              "cases": [
+                  {"key": "TODAY", "value": "today"}, 
+                  {"key": "TOMORROW", "value": "tomorrow"},
+                  {"key": "DISTANT", "value": "some day"}
+              ],
+              "default": "default value"
+          }
+      }
+  },
+  "check": [
+      {
+          "notNull": "dates.initialDate",
+          "then": "startDate",
+          "elseif": {
+              "notNull": "dates.endDate",
+              "then": "finalDate"
+          },
+          "else": "finalDate"
+      },
+      {
+          "notNull": "product.name",
+          "then": "finalDate"
+      }
+  ],
+  "inject": ["finalDate"]
+}
