@@ -36,7 +36,15 @@
         "I want to eat @0 that cost @1 dolars between @2 and @3 tomorrow and that would make me @4.",
         "I want to eat something that cost @1 dolars between @2 and @3 and that would make me @4.",
         "I want to eat something that cost nothing.",
+        "I want to eat something that cost nothing but different.",
         "I want to eat something that cost nothing but cost @1 and comes by @2.",
         "I want to eat something that cost nothing but cost @1"
+    ],
+    "resultOverrides": [
+        {
+            "if": "dates.initialDate.type",
+            "is": "today",
+            "use": 0
+        }
     ]
 }

@@ -64,7 +64,7 @@ function generateHeader(inputSources) {
 
 function generateSsmlTag(fields) {
     const result = fields.some(field => field.isDate) ? dateSsmlTag('DATE_SSML') : '';
-    return result + EOL;
+    return result + (result.length ? EOL : '');
 }
 
 async function generatePartials(fields) {
@@ -89,26 +89,46 @@ async function generatePartials(fields) {
     return result;
 }
 
+// TODO: complete result overrides implementation
+// @return Array<String>
+function createAccessors(fields, resultOverrides) {
+    if (fields.length === 0) {
+        return [];
+    }
+    // step 1: partial processing assignation
+    // step 2: override assignation
+    // step 3: default accessor
+    return [];
+}
+
 // TODO: FIX Assignation bugs and apply partial overriding
-function generateBody(fields) {
+function generateBody(fields, resultOverrides) {
     let accumulator = replaceAt(variable, "{0}", "result");
+    const accessors = createAccessors(fields, resultOverrides);
+    /*
     const accessors = fields.map(({ inputSource, key, override }) => override ? override : inputSource + "." + key);
+    */
     accumulator = accessors.length
         ? replaceAt(accumulator, "{1}", textReplace("text", "MessageFormat", "format", ...accessors))
         : '';
-    accumulator += EOL;
-    const hasDates = fields.some(field => field.isDate);
-    accumulator += hasDates ? addSsml("result") : addText("result");
+    accumulator += accumulator.length ? EOL : '';
+
+    // if there are no accessors we use the only var declared as pure text.
+    const addName = accessors.length > 0 ? "result" : "text_0";
+    accumulator += fields.some(field => field.isDate)
+        ? addSsml(addName)
+        : addText(addName);
+
     return accumulator;
 }
 
 async function generateCommonScript(schemaProps) {
-    const { id, fields } = schemaProps;
+    const { id, fields, resultOverrides } = schemaProps;
     const inputSources = Array.from(new Set(fields.map(({ inputSource }) => inputSource)));
     const header = generateHeader(inputSources);
     const SsmlTag = generateSsmlTag(fields);
     const partials = await generatePartials(fields);
-    const body = generateBody(fields);
+    const body = generateBody(fields, resultOverrides);
 
     const result = header + SsmlTag + partials + body;
 
