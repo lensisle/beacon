@@ -6,6 +6,7 @@ const fn = require("./function").fn;
 const objectExist = require("./objectExist").objectExist;
 const textReplace = require("./textReplace").textReplace;
 const variable = require("./variable").variable;
+const dateSsmlTag = require("./dateSsmlTag").dateSsmlTag;
 
 module.exports = {
     addSsml,
@@ -15,5 +16,6 @@ module.exports = {
     fn,
     objectExist,
     textReplace,
-    variable
+    variable,
+    dateSsmlTag
 };

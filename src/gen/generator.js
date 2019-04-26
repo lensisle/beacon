@@ -2,146 +2,29 @@ const {
     variable,
     objectExist,
     textReplace,
-    addText
+    addText,
+    addSsml,
+    dateSsmlTag
 } = require("../gen/templates/javascript/all");
 const { replace, replaceAt } = require("./replacer");
 const writeFile = require("../writer/fileWriter").writeFileAsPromise;
 const EOL = require('os').EOL;
-/**
- * input:
- * "prefix": "OrderUseCase",
- * "fields": {
-        "charges.amount.formattedAmount": {
-            "pointer": 1
-        },
-        "friendlyTitle": {
-            "pointer": 0
-        }
-    },
-    "contents": [
-        {
-            "text": "your order for {0} is {1}",
-            "ignores": []
-        },
-        {
-            "text": "your order for {0}",
-            "ignores": ["charges.amount.formattedAmount"]
-        }
-    ]
-
-    returns:
-    [
-        {
-            id: "OrderUseCase",
-            text: "your order for {0} is {1}",
-            fields: [{ key: friendlyTitle, pointer: 0 }, { key: charges.amount.formattedAmount, pointer: 1 }]
-        },
-        {
-            id: "OrderUseCaseWithoutFriendlyTitle",
-            text: "your order for {0}",
-            fields: [{ key: friendlyTitle, pointer: 0 }]
-        }
-    ]
- */
-
-function uppercaseFirst(text) {
-    return text.charAt(0).toUpperCase() + text.slice(1);
-}
-
-function formateFieldName(field) {
-    if (field.includes(".")) {
-        const parts = field.split(".");
-        return uppercaseFirst(parts[parts.length - 1]);
-    }
-    return uppercaseFirst(field);
-}
-
-function generateId(prefix, ignores) {
-    if (!ignores.length) {
-        return prefix;
-    }
-    
-    if (ignores.length === 2) {
-        return prefix + "Without" + formateFieldName(ignores[0]) + "And" + formateFieldName(ignores[1]);
-    }
-    const result = [prefix, "Without"];
-    ignores.forEach(key => {
-        result.push(formateFieldName(key));
-    });
-
-    return result.join("");
-}
 
 function formatVariableContent(content) {
     return `"${content}"`;
 }
 
-function transform({ prefix, contents, fields }) {
-    let result = [];
-    const fieldKeys = Object.keys(fields);
-
-    contents.forEach(({ text, ignores }) => {
-        const fieldsResult = [];
-        fieldKeys.forEach(key => {
-            if (!ignores.includes(key)) {
-                fieldsResult.push({ ...fields[key], key });
-            }
-        });
-        result.push({ id: generateId(prefix, ignores), text, fields: fieldsResult });
+async function createVariants(schemaProps) {
+    const { id, variant } = schemaProps;
+    let result = '//L10N_START' + EOL;
+    variant.forEach((text, i) => {
+        result += replace(variable, `text_${i}`, formatVariableContent(text)) + EOL;
     });
-
-    return result;
-}
-
-async function createVariant(descriptor) {
-    const { id, text } = descriptor;
-    const variant = replace(variable, "text", formatVariableContent(text));
+    result += '//L10N_END' + EOL;
     try {
-        await writeFile(`output/${id}/en-US`, `variant.js`, variant);
+        await writeFile(`output/${id}/en-US`, `${id}-variant.js`, result);
     } catch (e) {
         console.error("Error found while creating a variant", e);
-    }
-}
-
-function generateHeader(inputSources) {
-    return inputSources.reduce((accum, curr) => {
-        accum += objectExist(curr) + EOL;
-        return accum;
-    }, '') + EOL;
-}
-
-/**
- * fields: [
- *      {
- *          key,
- *          pointer,
- *          inputSource,
- *          isDate,
- *          testValue
- *      }
- * ]
- */
-function generateBody(fields) {
-    let accumulator = replaceAt(variable, "{0}", "result");
-    const accessors = fields.map(({ inputSource, key }) => inputSource + "." + key);
-    accumulator = replaceAt(accumulator, "{1}", textReplace("text", "MessageFormat", "format", ...accessors));
-    accumulator += EOL;
-    accumulator += addText("result");
-    return accumulator;
-}
-
-async function generateCommonScript(descriptor) {
-    const { id, fields } = descriptor;
-    const inputSources = Array.from(new Set(fields.map(({ inputSource }) => inputSource)));
-    const header = generateHeader(inputSources);
-    const body = generateBody(fields);
-
-    const result = header + body;
-
-    try {
-        await writeFile(`output/${id}`, `commonScript.js`, result);
-    } catch (e) {
-        console.error("Error found while creating a common script", e);
     }
 }
 
@@ -161,19 +44,56 @@ function variantParamsReducer(accum, curr) {
     return accum;
 }
 
-async function generateVariantParams(descriptor) {
-    const { id, fields } = descriptor;
+async function generateVariantParams(schemaProps) {
+    const { id, fields } = schemaProps;
     const variantParams = fields.reduce(variantParamsReducer, {});
     try {
-        await writeFile(`output/${id}/en-US`, `variant.params.json`, JSON.stringify(variantParams, null, 2));
+        await writeFile(`output/${id}/en-US`, `${id}.params.json`, JSON.stringify(variantParams, null, 2));
     } catch (e) {
         console.error("Error found while creating a variant params", e);
     }
 }
 
-module.exports = {  
-    transform,
-    createVariant,
+function generateHeader(inputSources) {
+    return inputSources.reduce((accum, curr) => {
+        accum += objectExist(curr) + EOL;
+        return accum;
+    }, '') + EOL;
+}
+
+function generateSsmlTag(fields) {
+    const result = fields.some(field => field.isDate) ? dateSsmlTag('DATE_SSML') : '';
+    return result + EOL;
+}
+
+function generateBody(fields) {
+    let accumulator = replaceAt(variable, "{0}", "result");
+    const accessors = fields.map(({ inputSource, key, override }) => override ? override : inputSource + "." + key);
+    accumulator = replaceAt(accumulator, "{1}", textReplace("text", "MessageFormat", "format", ...accessors));
+    accumulator += EOL;
+    const hasDates = fields.some(field => field.isDate);
+    accumulator += hasDates ? addSsml("result") : addText("result");
+    return accumulator;
+}
+
+async function generateCommonScript(schemaProps) {
+    const { id, fields } = schemaProps;
+    const inputSources = Array.from(new Set(fields.map(({ inputSource }) => inputSource)));
+    const header = generateHeader(inputSources);
+    const SsmlTag = generateSsmlTag(fields);
+    const body = generateBody(fields);
+
+    const result = header + SsmlTag + body;
+
+    try {
+        await writeFile(`output/${id}`, `commonScript.js`, result);
+    } catch (e) {
+        console.error("Error found while creating a common script", e);
+    }
+}
+
+module.exports = {
+    createVariants,
     generateCommonScript,
     generateVariantParams
 };

@@ -6,6 +6,7 @@ function replace(text, ...replacements) {
     replacements.forEach(replacement => {
         result = result.replace(/\{[0-9]}/, replacement);
     });
+    
     return result;
 }
 

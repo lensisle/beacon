@@ -1,9 +1,11 @@
 const {
-    transform,
-    createVariant,
+    createVariants,
     generateCommonScript,
     generateVariantParams
 } = require("./gen/generator");
+const {
+    dataToSchemaProps
+} = require("./gen/transformer");
 const reader = require("./reader/jsonReader");
 const loader = require("./loader/fileLoader").readFileAsPromise;
 
@@ -22,19 +24,18 @@ async function execute() {
     try {
         const file = await loader(filePath);
         if (!file) {
-            console.error("Error! file loaded doesn't have data or could be readed");
+            console.error("Error! file loaded doesn't have data or it couldn't   be readed");
             return;
         }
 
         const parsedFile = reader.tryJSONparse(file);
-        const descriptors = transform(parsedFile);
+        const schemaProps = dataToSchemaProps(parsedFile);
 
-        descriptors.forEach(async (descriptor) => {
-            await createVariant(descriptor);
-            await generateCommonScript(descriptor);
-            await generateVariantParams(descriptor);
+        schemaProps.forEach(async (prop) => {
+            await createVariants(prop);
+            await generateVariantParams(prop);
+            await generateCommonScript(prop);
         });
-
     } catch (e) {
         console.log(e);
     }
