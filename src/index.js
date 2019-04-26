@@ -6,8 +6,8 @@ const {
 const {
     dataToSchemaProps
 } = require("./gen/transformer");
-const reader = require("./reader/jsonReader");
-const loader = require("./loader/fileLoader").readFileAsPromise;
+const parser = require("./parser/jsonParser");
+const reader = require("./reader/fileReader").readFileAsPromise;
 
 const filePath = process.argv[2];
 
@@ -22,13 +22,13 @@ if (!filePath.endsWith(".json")) {
 
 async function execute() {
     try {
-        const file = await loader(filePath);
+        const file = await reader(filePath);
         if (!file) {
             console.error("Error! file loaded doesn't have data or it couldn't   be readed");
             return;
         }
 
-        const parsedFile = reader.tryJSONparse(file);
+        const parsedFile = parser.tryJSONparse(file);
         const schemaProps = dataToSchemaProps(parsedFile);
 
         schemaProps.forEach(async (prop) => {

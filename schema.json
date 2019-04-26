@@ -16,7 +16,8 @@
             "inputSource": "params",
             "testValue": "????0515",
             "override": "initialDateResult",
-            "isDate": true
+            "isDate": true,
+            "applyPartials": ["transformDate"]
         },
         "dates.endDate": {
             "pointer": 3,

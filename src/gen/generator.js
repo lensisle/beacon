@@ -8,6 +8,7 @@ const {
 } = require("../gen/templates/javascript/all");
 const { replace, replaceAt } = require("./replacer");
 const writeFile = require("../writer/fileWriter").writeFileAsPromise;
+const reader = require("../reader/fileReader");
 const EOL = require('os').EOL;
 
 function formatVariableContent(content) {
@@ -66,10 +67,35 @@ function generateSsmlTag(fields) {
     return result + EOL;
 }
 
+async function generatePartials(fields) {
+    const partials = fields.reduce((accum, curr) => {
+        if (curr.applyPartials) {
+            accum.push(...curr.applyPartials);
+        }
+        return accum;
+    }, []);
+
+    if (!partials.length) {
+        return '';
+    }
+
+    let result = '';
+    for (const partial of partials) {
+        const path = "_" + partial + ".js";
+        const file = await reader.readFileAsPromise(path);
+        result += file + EOL + EOL;
+    }
+
+    return result;
+}
+
+// TODO: FIX Assignation bugs and apply partial overriding
 function generateBody(fields) {
     let accumulator = replaceAt(variable, "{0}", "result");
     const accessors = fields.map(({ inputSource, key, override }) => override ? override : inputSource + "." + key);
-    accumulator = replaceAt(accumulator, "{1}", textReplace("text", "MessageFormat", "format", ...accessors));
+    accumulator = accessors.length
+        ? replaceAt(accumulator, "{1}", textReplace("text", "MessageFormat", "format", ...accessors))
+        : '';
     accumulator += EOL;
     const hasDates = fields.some(field => field.isDate);
     accumulator += hasDates ? addSsml("result") : addText("result");
@@ -81,9 +107,10 @@ async function generateCommonScript(schemaProps) {
     const inputSources = Array.from(new Set(fields.map(({ inputSource }) => inputSource)));
     const header = generateHeader(inputSources);
     const SsmlTag = generateSsmlTag(fields);
+    const partials = await generatePartials(fields);
     const body = generateBody(fields);
 
-    const result = header + SsmlTag + body;
+    const result = header + SsmlTag + partials + body;
 
     try {
         await writeFile(`output/${id}`, `commonScript.js`, result);
