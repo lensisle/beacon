@@ -43,7 +43,13 @@
         {
             "if": "dates.initialDate.type",
             "is": "today",
-            "use": "text_0"
+            "use": "text_0",
+            "join": true
+        },
+        {
+            "if": "dates.initialDate.type",
+            "is": "tomorrow",
+            "use": "text_1"
         },
         {
             "if": "charges.amount.formattedAmount",

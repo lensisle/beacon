@@ -1,6 +1,8 @@
-const fn = `function {0}({1}) {
-    {2}
-}`;
+const fn = (name, args, body) => `
+function ${name}(${args}) {
+    ${body}
+}
+`;
 
 module.exports = {
     fn

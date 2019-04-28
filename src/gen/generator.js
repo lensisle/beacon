@@ -6,7 +6,8 @@ const {
     addSsml,
     dateSsmlTag,
     ifCondition,
-    assignVariable
+    assignVariable,
+    fn
 } = require("../gen/templates/javascript/all");
 const writeFile = require("../writer/fileWriter").writeFileAsPromise;
 const reader = require("../reader/fileReader");
@@ -59,9 +60,12 @@ function generateHeader(inputSources) {
     }, '') + EOL;
 }
 
-// TODO: add SSML tag generation per field, so its available only from the partial 
-// local scope.
-async function generatePartials(fields) {
+function generateSsmlTag(fields) {
+    const result = fields.some(field => field.isDate) ? dateSsmlTag('DATE_SSML') : '';
+    return result + (result.length ? EOL : '');
+}
+
+async function generatePartials(fields, resultOverrides = []) {
     const partials = fields.reduce((accum, curr) => {
         if (curr.partials) {
             accum.push(...curr.partials);
@@ -84,10 +88,16 @@ async function generatePartials(fields) {
 
         const path = "_" + partial + ".js";
         const file = await reader.readFileAsPromise(path);
-        result += file + EOL + EOL;
+        result += file + EOL;
 
         partialsUsed.add(partial);
     }
+
+    if (resultOverrides.length) {
+        result += fn("exist", "input", "return typeof input !== 'undefined' && input !== null;");
+    }
+
+    result += EOL;
 
     return result;
 }
@@ -133,16 +143,21 @@ function createReplaceTarget(fields, resultOverrides) {
 
     target += EOL;
 
-    for (const resultOverride of resultOverrides) {
-        const { if: _if, is, use } = resultOverride;
+    for (let i = 0, max = resultOverrides.length; i < max; i++) {
+        const resultOverride = resultOverrides[i];
+        const { if: _if, is, use, join } = resultOverride;
         const isValidField = fields.some(({ key }) => shouldOverride(_if, key));
         if (!isValidField) {
             continue;
         }
+        const shouldJoin = join && resultOverrides[i + 1];
         const isValue = typeof is === "string" ? `'${is}'` : is;
-        const condition = ifCondition(_if + " === " + isValue, assignVariable("variantTarget", use));
+        const condition = ifCondition(`exist(${_if}) && ` + _if + " === " + isValue, assignVariable("variantTarget", use));
         target += condition;
+        target += shouldJoin ? " else " : EOL;
     }
+    
+    target += EOL;
 
     return target;
 }
@@ -173,10 +188,11 @@ async function generateCommonScript(schemaProps, resultOverrides) {
     const { id, fields } = schemaProps;
     const inputSources = Array.from(new Set(fields.map(({ inputSource }) => inputSource)));
     const header = generateHeader(inputSources);
-    const partials = await generatePartials(fields);
+    const SsmlTag = generateSsmlTag(fields);
+    const partials = await generatePartials(fields, resultOverrides);
     const body = generateBody(fields, resultOverrides);
 
-    const result = header + partials + body;
+    const result = header + SsmlTag + partials + body;
 
     try {
         await writeFile(`output/${id}`, `commonScript.js`, result);

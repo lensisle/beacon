@@ -1,8 +1,4 @@
-const ifCondition = (condition, outcome) => `
-if (${condition}) {
-    ${outcome} 
-}
-`;
+const ifCondition = (condition, outcome) => `if (${condition}) { ${outcome} }`;
 
 module.exports = {
     ifCondition
