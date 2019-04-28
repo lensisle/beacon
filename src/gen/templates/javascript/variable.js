@@ -1,5 +1,7 @@
-const variable = `var {0} = {1};`;
+const variable = (varName, value) => `var ${varName} = ${value};`;
+const assignVariable = (varName, value) => `${varName} = ${value};`;
 
 module.exports = { 
-    variable
+    variable,
+    assignVariable
 };

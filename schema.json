@@ -15,9 +15,8 @@
             "pointer": 2,
             "inputSource": "params",
             "testValue": "????0515",
-            "override": "initialDateResult",
             "isDate": true,
-            "applyPartials": ["transformDate"]
+            "partials": ["transformDate", "transformDate"]
         },
         "dates.endDate": {
             "pointer": 3,
@@ -44,7 +43,12 @@
         {
             "if": "dates.initialDate.type",
             "is": "today",
-            "use": 0
+            "use": "text_0"
+        },
+        {
+            "if": "charges.amount.formattedAmount",
+            "is": 5,
+            "use": "text_0"
         }
     ]
 }

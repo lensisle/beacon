@@ -30,11 +30,12 @@ async function execute() {
 
         const parsedFile = parser.tryJSONparse(file);
         const schemaProps = dataToSchemaProps(parsedFile);
+        const { resultOverrides } = parsedFile;
 
         schemaProps.forEach(async (prop) => {
             await createVariants(prop);
             await generateVariantParams(prop);
-            await generateCommonScript(prop);
+            await generateCommonScript(prop, resultOverrides);
         });
     } catch (e) {
         console.log(e);

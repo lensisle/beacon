@@ -1,4 +1,4 @@
-const objectExist = sourceObject => `if (typeof ${sourceObject} === 'undefined') { return; }`;
+const objectExist = (sourceObject, outcome) => `if (typeof ${sourceObject} === 'undefined') { ${outcome} }`;
 
 module.exports = {
     objectExist

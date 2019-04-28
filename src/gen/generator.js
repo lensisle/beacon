@@ -4,22 +4,19 @@ const {
     textReplace,
     addText,
     addSsml,
-    dateSsmlTag
+    dateSsmlTag,
+    ifCondition,
+    assignVariable
 } = require("../gen/templates/javascript/all");
-const { replace, replaceAt } = require("./replacer");
 const writeFile = require("../writer/fileWriter").writeFileAsPromise;
 const reader = require("../reader/fileReader");
 const EOL = require('os').EOL;
-
-function formatVariableContent(content) {
-    return `"${content}"`;
-}
 
 async function createVariants(schemaProps) {
     const { id, variant } = schemaProps;
     let result = '//L10N_START' + EOL;
     variant.forEach((text, i) => {
-        result += replace(variable, `text_${i}`, formatVariableContent(text)) + EOL;
+        result += variable(`text_${i}`, `"${text}"`) + EOL;
     });
     result += '//L10N_END' + EOL;
     try {
@@ -57,20 +54,17 @@ async function generateVariantParams(schemaProps) {
 
 function generateHeader(inputSources) {
     return inputSources.reduce((accum, curr) => {
-        accum += objectExist(curr) + EOL;
+        accum += objectExist(curr, "return;") + EOL;
         return accum;
     }, '') + EOL;
 }
 
-function generateSsmlTag(fields) {
-    const result = fields.some(field => field.isDate) ? dateSsmlTag('DATE_SSML') : '';
-    return result + (result.length ? EOL : '');
-}
-
+// TODO: add SSML tag generation per field, so its available only from the partial 
+// local scope.
 async function generatePartials(fields) {
     const partials = fields.reduce((accum, curr) => {
-        if (curr.applyPartials) {
-            accum.push(...curr.applyPartials);
+        if (curr.partials) {
+            accum.push(...curr.partials);
         }
         return accum;
     }, []);
@@ -79,58 +73,110 @@ async function generatePartials(fields) {
         return '';
     }
 
+    // This prevents repeated partial declaration.
+    const partialsUsed = new Set();
+
     let result = '';
     for (const partial of partials) {
+        if (partialsUsed.has(partial)) {
+            continue;
+        }
+
         const path = "_" + partial + ".js";
         const file = await reader.readFileAsPromise(path);
         result += file + EOL + EOL;
+
+        partialsUsed.add(partial);
     }
 
     return result;
 }
 
-// TODO: complete result overrides implementation
-// @return Array<String>
-function createAccessors(fields, resultOverrides) {
-    if (fields.length === 0) {
-        return [];
+function createPartialsCall(inputSource, fieldKey, partials) {
+    let callString = `${inputSource}.${fieldKey}`;
+    for (const partial of partials) {
+        callString = `${partial}(${callString})`;
     }
-    // step 1: partial processing assignation
-    // step 2: override assignation
-    // step 3: default accessor
-    return [];
+    return callString;
 }
 
-// TODO: FIX Assignation bugs and apply partial overriding
+function createAccessors(fields) {
+    if (fields.length === 0) { return []; }
+    return fields.map(({ inputSource, key, partials = [] }) => createPartialsCall(inputSource, key, partials));
+}
+
+function shouldOverride(targetField, referenceFieldKey) {
+    if (targetField === referenceFieldKey) {
+        return true;
+    }
+
+    const targetArr = targetField.split(".");
+    const referenceArr = referenceFieldKey.split(".");
+    if (targetArr.length < referenceArr.length) {
+        return false;
+    }
+    
+    for (let i = 0, max = referenceArr.length; i < max; i++) {
+        if (referenceArr[i] !== targetArr[i]) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+function createReplaceTarget(fields, resultOverrides) {
+    let target = variable("variantTarget", "text_0");
+    if (!resultOverrides) {
+        return target;
+    }
+
+    target += EOL;
+
+    for (const resultOverride of resultOverrides) {
+        const { if: _if, is, use } = resultOverride;
+        const isValidField = fields.some(({ key }) => shouldOverride(_if, key));
+        if (!isValidField) {
+            continue;
+        }
+        const isValue = typeof is === "string" ? `'${is}'` : is;
+        const condition = ifCondition(_if + " === " + isValue, assignVariable("variantTarget", use));
+        target += condition;
+    }
+
+    return target;
+}
+
 function generateBody(fields, resultOverrides) {
-    let accumulator = replaceAt(variable, "{0}", "result");
-    const accessors = createAccessors(fields, resultOverrides);
-    /*
-    const accessors = fields.map(({ inputSource, key, override }) => override ? override : inputSource + "." + key);
-    */
-    accumulator = accessors.length
-        ? replaceAt(accumulator, "{1}", textReplace("text", "MessageFormat", "format", ...accessors))
-        : '';
+    if (!fields.length) {
+        return addText("text_0");
+    }
+
+    const replaceTarget = createReplaceTarget(fields, resultOverrides);
+    const accessors = createAccessors(fields);
+    const resultValue =  textReplace("variantTarget", "MessageFormat", "format", ...accessors);
+    const resultAssign = variable("result", resultValue);
+
+    let accumulator = "";
+    accumulator += replaceTarget;
+    accumulator += resultAssign;
     accumulator += accumulator.length ? EOL : '';
 
-    // if there are no accessors we use the only var declared as pure text.
-    const addName = accessors.length > 0 ? "result" : "text_0";
-    accumulator += fields.some(field => field.isDate)
-        ? addSsml(addName)
-        : addText(addName);
+    const addCall = fields.some(field => field.isDate) ? addSsml : addText;
+    accumulator += accumulator.length ? EOL : '';
+    accumulator += addCall("result");
 
     return accumulator;
 }
 
-async function generateCommonScript(schemaProps) {
-    const { id, fields, resultOverrides } = schemaProps;
+async function generateCommonScript(schemaProps, resultOverrides) {
+    const { id, fields } = schemaProps;
     const inputSources = Array.from(new Set(fields.map(({ inputSource }) => inputSource)));
     const header = generateHeader(inputSources);
-    const SsmlTag = generateSsmlTag(fields);
     const partials = await generatePartials(fields);
     const body = generateBody(fields, resultOverrides);
 
-    const result = header + SsmlTag + partials + body;
+    const result = header + partials + body;
 
     try {
         await writeFile(`output/${id}`, `commonScript.js`, result);
