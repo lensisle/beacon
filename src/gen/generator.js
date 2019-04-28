@@ -65,6 +65,18 @@ function generateSsmlTag(fields) {
     return result + (result.length ? EOL : '');
 }
 
+function isValidPartialCode(file, partial) {
+    try {
+        eval(file);
+        return true;
+    } catch (e) {
+        if (e instanceof SyntaxError) {
+            console.error(`Partial ${partial} has invalid javascript!`);
+        }
+        return false;
+    }
+}
+
 async function generatePartials(fields, resultOverrides = []) {
     const partials = fields.reduce((accum, curr) => {
         if (curr.partials) {
@@ -88,6 +100,9 @@ async function generatePartials(fields, resultOverrides = []) {
 
         const path = "_" + partial + ".js";
         const file = await reader.readFileAsPromise(path);
+        if (!isValidPartialCode(file, partial)) {
+            continue;
+        }
         result += file + EOL;
 
         partialsUsed.add(partial);
@@ -152,7 +167,9 @@ function createReplaceTarget(fields, resultOverrides) {
         }
         const shouldJoin = join && resultOverrides[i + 1];
         const isValue = typeof is === "string" ? `'${is}'` : is;
-        const condition = ifCondition(`exist(${_if}) && ` + _if + " === " + isValue, assignVariable("variantTarget", use));
+        const nonNullCheck = `exist(${_if})`;
+        const valueCheck = _if + " === " + isValue;
+        const condition = ifCondition(is ? `${nonNullCheck} && ${valueCheck}` : nonNullCheck, assignVariable("variantTarget", use));
         target += condition;
         target += shouldJoin ? " else " : EOL;
     }
