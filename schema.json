@@ -44,11 +44,12 @@
             "if": "dates.initialDate.type",
             "is": "today",
             "use": "text_0",
-            "join": true
+            "vehicle": true
         },
         {
             "if": "dates.initialDate.type",
             "is": "tomorrow",
+            "join": true,
             "use": "text_1"
         },
         {

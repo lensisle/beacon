@@ -1,5 +1,5 @@
 const fn = (name, args, body) => `
-function ${name}(${args}) {
+function ${name}(${args ? args : ''}) {
     ${body}
 }
 `;

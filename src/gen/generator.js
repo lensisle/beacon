@@ -77,7 +77,7 @@ function isValidPartialCode(file, partial) {
     }
 }
 
-async function generatePartials(fields, resultOverrides = []) {
+async function generatePartials(fields, variant, resultOverrides = []) {
     const partials = fields.reduce((accum, curr) => {
         if (curr.partials) {
             accum.push(...curr.partials);
@@ -108,8 +108,21 @@ async function generatePartials(fields, resultOverrides = []) {
         partialsUsed.add(partial);
     }
 
+    // if only 1 variant text exist there's no need for 
+    // result overrides.
+    if (variant.length < 2) {
+        result += EOL;
+        return result;
+    }
+
     if (resultOverrides.length) {
-        result += fn("exist", "input", "return typeof input !== 'undefined' && input !== null;");
+        const condition = "return typeof input !== 'undefined' && input !== null;";
+        result += fn("exist", "input", condition);
+    }
+
+    if (resultOverrides.length && resultOverrides.some(ro => ro.vehicle)) {
+        const condition = "return typeof inVehicleMode !== 'undefined' && inVehicleMode === true;";
+        result += fn("isInVehicleMode", null, condition);
     }
 
     result += EOL;
@@ -150,9 +163,10 @@ function shouldOverride(targetField, referenceFieldKey) {
     return true;
 }
 
-function createReplaceTarget(fields, resultOverrides) {
+function createReplaceTarget(fields, variant, resultOverrides) {
     let target = variable("variantTarget", "text_0");
-    if (!resultOverrides) {
+    if (!resultOverrides || variant.length < 2) {
+        target += EOL;
         return target;
     }
 
@@ -160,7 +174,7 @@ function createReplaceTarget(fields, resultOverrides) {
 
     for (let i = 0, max = resultOverrides.length; i < max; i++) {
         const resultOverride = resultOverrides[i];
-        const { if: _if, is, use, join } = resultOverride;
+        const { if: _if, is, use, join, vehicle } = resultOverride;
         const isValidField = fields.some(({ key }) => shouldOverride(_if, key));
         if (!isValidField) {
             continue;
@@ -168,8 +182,9 @@ function createReplaceTarget(fields, resultOverrides) {
         const shouldJoin = join && resultOverrides[i + 1];
         const isValue = typeof is === "string" ? `'${is}'` : is;
         const nonNullCheck = `exist(${_if})`;
-        const valueCheck = _if + " === " + isValue;
-        const condition = ifCondition(is ? `${nonNullCheck} && ${valueCheck}` : nonNullCheck, assignVariable("variantTarget", use));
+        const vehicleCheck = vehicle ? ` && isInVehicleMode(${_if})` : '';
+        const valueCheck = is ? ` && ${_if} === ${isValue}` : '';
+        const condition = ifCondition(`${nonNullCheck}${vehicleCheck}${valueCheck}`, assignVariable("variantTarget", use));
         target += condition;
         target += shouldJoin ? " else " : EOL;
     }
@@ -179,12 +194,12 @@ function createReplaceTarget(fields, resultOverrides) {
     return target;
 }
 
-function generateBody(fields, resultOverrides) {
+function generateBody(fields, variant, resultOverrides) {
     if (!fields.length) {
         return addText("text_0");
     }
 
-    const replaceTarget = createReplaceTarget(fields, resultOverrides);
+    const replaceTarget = createReplaceTarget(fields, variant, resultOverrides);
     const accessors = createAccessors(fields);
     const resultValue =  textReplace("variantTarget", "MessageFormat", "format", ...accessors);
     const resultAssign = variable("result", resultValue);
@@ -202,12 +217,12 @@ function generateBody(fields, resultOverrides) {
 }
 
 async function generateCommonScript(schemaProps, resultOverrides) {
-    const { id, fields } = schemaProps;
+    const { id, fields, variant } = schemaProps;
     const inputSources = Array.from(new Set(fields.map(({ inputSource }) => inputSource)));
     const header = generateHeader(inputSources);
     const SsmlTag = generateSsmlTag(fields);
-    const partials = await generatePartials(fields, resultOverrides);
-    const body = generateBody(fields, resultOverrides);
+    const partials = await generatePartials(fields, variant, resultOverrides);
+    const body = generateBody(fields, variant, resultOverrides);
 
     const result = header + SsmlTag + partials + body;
 

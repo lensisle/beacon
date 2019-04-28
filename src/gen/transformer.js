@@ -86,6 +86,8 @@ function dataToSchemaProps({ prefix, fields, variants }) {
         }
     }
 
+    console.log("fields map", fieldsMap);
+
     return Object.values(strMapToObj(fieldsMap));
 }
 
