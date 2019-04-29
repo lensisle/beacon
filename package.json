@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "node src/index.js schema.json"
+    "start": "node src/index.js schema.json",
+    "new": "node src/index.js new"
   },
   "author": "",
   "license": "ISC"

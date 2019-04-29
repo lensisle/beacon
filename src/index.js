@@ -8,8 +8,15 @@ const {
 } = require("./gen/transformer");
 const parser = require("./parser/jsonParser");
 const reader = require("./reader/fileReader").readFileAsPromise;
+const schema = require("./gen/templates/json/schema").schema;
+const writer = require("./writer/fileWriter").writeFileAsPromise;
 
 const filePath = process.argv[2];
+
+if (filePath === "new") {
+    writer('./', "schema.json", schema);
+    return;
+}
 
 if (!filePath) {
     console.error("Error! a filepath must be provided to run this script.");
