@@ -28,7 +28,7 @@ async function createVariants(schemaProps) {
 }
 
 function variantParamsReducer(accum, curr) {
-    const { key, testValue, inputSource } = curr;
+    const { key, testValue = '', inputSource } = curr;
     if (!accum[inputSource]) {
         accum[inputSource] = {};
     }
@@ -163,7 +163,26 @@ function shouldOverride(targetField, referenceFieldKey) {
     return true;
 }
 
-function createReplaceTarget(fields, variant, resultOverrides) {
+function getInputSourceForField(target, fields, exposed) {
+    const inputSourceFields = fields.filter(({ key }) => key === target);
+    const inputSourceExposed = exposed.filter(({ key }) => key === target);
+    let inputSource;
+    if (inputSourceFields.length > 0) {
+        inputSource = inputSourceFields[0].inputSource;
+    }
+    if (!inputSource && inputSourceExposed.length > 0) {
+        inputSource = inputSourceExposed[0].inputSource;
+    }
+
+    if (!inputSource) {
+        console.error("Error trying to evaluate a condition using an unknown field:", 
+            target, "(Maybe you forgot to define and expose it?)");
+    }
+
+    return inputSource;
+}
+
+function createReplaceTarget(fields, variant, resultOverrides, exposed) {
     let target = variable("variantTarget", "text_0");
     if (!resultOverrides || variant.length < 2) {
         target += EOL;
@@ -175,18 +194,26 @@ function createReplaceTarget(fields, variant, resultOverrides) {
     for (let i = 0, max = resultOverrides.length; i < max; i++) {
         const resultOverride = resultOverrides[i];
         const { if: _if, is, use, join, vehicle } = resultOverride;
-        const isValidField = fields.some(({ key }) => shouldOverride(_if, key));
-        if (!isValidField) {
+        if (!_if && !is && !vehicle && !join && use) {
+            target += `{ ${assignVariable("variantTarget", use)} }`;
             continue;
         }
+        const isValidField = fields.some(({ key }) => shouldOverride(_if, key));
+        if (!isValidField && !vehicle) {
+            continue;
+        }
+        
+        const inputSource = getInputSourceForField(_if, fields, exposed);
+        const ifAccessor = `${inputSource}.${_if}`;
         const shouldJoin = join && resultOverrides[i + 1];
         const isValue = typeof is === "string" ? `'${is}'` : is;
-        const nonNullCheck = `exist(${_if})`;
-        const vehicleCheck = vehicle ? ` && isInVehicleMode(${_if})` : '';
-        const valueCheck = is ? ` && ${_if} === ${isValue}` : '';
-        const condition = ifCondition(`${nonNullCheck}${vehicleCheck}${valueCheck}`, assignVariable("variantTarget", use));
+        const nonNullCheck = _if ? `exist(${ifAccessor})` : '';
+        const vehicleCheck = vehicle ? `isInVehicleMode()` : '';
+        const valueCheck = _if && is ? `${ifAccessor} === ${isValue}` : '';
+        const condStr = [nonNullCheck, vehicleCheck, valueCheck].filter(c => c !== '').join(' && ');
+        const condition = ifCondition(`${condStr}`, assignVariable("variantTarget", use));
         target += condition;
-        target += shouldJoin ? " else " : EOL;
+        target += shouldJoin ? EOL + " else " : EOL;
     }
     
     target += EOL;
@@ -194,14 +221,16 @@ function createReplaceTarget(fields, variant, resultOverrides) {
     return target;
 }
 
-function generateBody(fields, variant, resultOverrides) {
-    if (!fields.length) {
+function generateBody(fields, variant, resultOverrides, exposed) {
+    if (variant.length < 2) {
         return addText("text_0");
     }
 
-    const replaceTarget = createReplaceTarget(fields, variant, resultOverrides);
+    const replaceTarget = createReplaceTarget(fields, variant, resultOverrides, exposed);
     const accessors = createAccessors(fields);
-    const resultValue =  textReplace("variantTarget", "MessageFormat", "format", ...accessors);
+    const resultValue = accessors.length 
+        ? textReplace("variantTarget", "MessageFormat", "format", ...accessors)
+        : "variantTarget";
     const resultAssign = variable("result", resultValue);
 
     let accumulator = "";
@@ -216,13 +245,17 @@ function generateBody(fields, variant, resultOverrides) {
     return accumulator;
 }
 
+function getInputSources(fields = [], exposed = []) {
+    return Array.from(new Set((fields.concat(exposed)).map(({ inputSource }) => inputSource)));
+}
+
 async function generateCommonScript(schemaProps, resultOverrides) {
-    const { id, fields, variant } = schemaProps;
-    const inputSources = Array.from(new Set(fields.map(({ inputSource }) => inputSource)));
+    const { id, fields, variant, exposed } = schemaProps;
+    const inputSources = getInputSources(fields, exposed);
     const header = generateHeader(inputSources);
     const SsmlTag = generateSsmlTag(fields);
     const partials = await generatePartials(fields, variant, resultOverrides);
-    const body = generateBody(fields, variant, resultOverrides);
+    const body = generateBody(fields, variant, resultOverrides, exposed);
 
     const result = header + SsmlTag + partials + body;
 

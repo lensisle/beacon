@@ -53,10 +53,12 @@ function dataToSchemaProps({ prefix, fields, variants }) {
     const fieldsMap = new Map();
     let flatCount = 65;
 
-    for(const text of variants) {
-        const pointers = new Set(getTextPointers(text));
+    for(const content of variants) {
+        const isContentArray = content instanceof Array;
+        const pointers = new Set(getTextPointers(isContentArray ? '' : content));
         const fieldMatches = [];
         const ignored = [];
+        const exposed = [];
 
         for (const key in fields) {
             if (pointers.has(fields[key].pointer + '')) {
@@ -64,14 +66,19 @@ function dataToSchemaProps({ prefix, fields, variants }) {
             } else {
                 ignored.push(key);
             }
+
+            if (fields[key].expose) {
+                exposed.push({ key, ...fields[key] });
+            }
         }
 
         const key = fieldMatches.map(({ key }) => key).join(' ');
         if (key.length === 0) {
             fieldsMap.set("flat_" + flatCount, { 
                 id: prefix + "Flat" + String.fromCharCode(flatCount),
-                variant: [cleanVariantText(text)],
-                fields: fieldMatches 
+                variant: isContentArray ? content.map(v => cleanVariantText(v)) : [cleanVariantText(content)],
+                fields: fieldMatches,
+                exposed
             });
             flatCount += 1;
         } else {
@@ -79,10 +86,11 @@ function dataToSchemaProps({ prefix, fields, variants }) {
                 fieldsMap.set(key, { 
                     id: generateId(prefix, ignored, Object.keys(fields)),
                     variant: [],
-                    fields: fieldMatches 
+                    fields: fieldMatches,
+                    exposed
                 });
             }
-            fieldsMap.get(key).variant.push(cleanVariantText(text));
+            fieldsMap.get(key).variant.push(cleanVariantText(content));
         }
     }
     

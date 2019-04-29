@@ -1,60 +1,38 @@
 {
     "prefix": "CaseEatMessage",
     "fields": {
-        "product.name": {
-            "pointer": 0,
-            "inputSource": "params",
-            "testValue": "Avocado"
-        },
-        "charges.amount.formattedAmount": {
-            "pointer": 1,
-            "inputSource": "directive",
-            "testValue": "$50"
-        },
-        "dates.initialDate": {
-            "pointer": 2,
-            "inputSource": "params",
-            "testValue": "????0515",
-            "isDate": true,
-            "partials": ["transformDate", "transformDate"]
-        },
         "dates.endDate": {
-            "pointer": 3,
             "inputSource": "params",
-            "testValue": "????0516",
-            "isDate": true
+            "expose": true
         },
-        "target.emotions.emotion": {
-            "pointer": 4,
-            "inputSource": "directive",
-            "testValue": "happy"
+        "dates.startDate": {
+            "inputSource": "variant",
+            "expose": true
         }
     },
     "variants": [
-        "I want to eat @0 that cost @1 dolars between @2 and @3 today and that would make me @4.",
-        "I want to eat @0 that cost @1 dolars between @2 and @3 tomorrow and that would make me @4.",
-        "I want to eat something that cost @1 dolars between @2 and @3 and that would make me @4.",
-        "I want to eat something that cost nothing.",
-        "I want to eat something that cost nothing but different.",
-        "I want to eat something that cost nothing but cost @1 and comes by @2.",
-        "I want to eat something that cost nothing but cost @1"
+        ["I want to eat something that cost nothing but different.", "I want to eat something that cost nothing but different and better."]
     ],
     "resultOverrides": [
         {
-            "if": "dates.initialDate.type",
-            "is": "today",
+            "if": "dates.endDate",
+            "is": 5,
+            "vehicle": true,
             "use": "text_0",
-            "vehicle": true
+            "join": true
         },
         {
-            "if": "dates.initialDate.type",
-            "is": "tomorrow",
-            "join": true,
+            "if": "dates.startDate",
+            "is": 5,
+            "vehicle": true,
+            "use": "text_1",
+            "join": true
+        },
+        {
+            "if": "dates.startDate",
+            "is": 5,
+            "vehicle": true,
             "use": "text_1"
-        },
-        {
-            "if": "charges.amount.formattedAmount",
-            "use": "text_0"
         }
     ]
 }
